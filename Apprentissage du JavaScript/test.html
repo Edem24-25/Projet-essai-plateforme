@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Le JavaScript</h1>
+
+    <script>
+        var family = {
+        self: 'Rafael',
+        sister: 'Mathilde',
+        brother: 'Ahmed',
+        cousin_1: 'Jérôme',
+        cousin_2: 'Guillaume'
+        };
+        var id = 'sister';
+        console.log(family[id]); // Affiche : « Mathilde »
+        console.log(family.brother); // Affiche : « Ahmed »
+        console.log(family['self']); // Affiche : « Rafael »
+        family['uncle'] = 'Pauline'; // On ajoute une donnée, avec un identifiant.
+        family.aunt = 'Karim'; // On peut ajouter aussi de cette manière.
+        console.log(family.uncle);
+        console.log(family.aunt);
+        
+    </script>
+</body>
+</html>

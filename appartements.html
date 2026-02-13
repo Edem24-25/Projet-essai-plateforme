@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApartFinder - Location d'Appartements</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="style-appartements.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark bg-dark sticky-top">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-home"></i> ApartFinder
+            </span>
+
+            <div class="btn-group me-2">
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="filtresMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-filter"></i> Filtres rapides
+                    </button>
+                    <div class="dropdown-menu p-4" aria-labelledby="filtresMenuBtn" style="min-width: 520px;">
+                        <div class="row gx-4">
+                            <div class="col-md-4">
+                                <h6>Prix</h6>
+                                <div class="mb-2">
+                                    <input type="number" class="form-control form-control-sm" id="menuPrixMin" placeholder="Min">
+                                </div>
+                                <div class="mb-2">
+                                    <input type="number" class="form-control form-control-sm" id="menuPrixMax" placeholder="Max">
+                                </div>
+                                <small class="text-muted">Plage de prix rapide</small>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Équipements</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="menuWifi">
+                                    <label class="form-check-label" for="menuWifi">Wi‑Fi</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="menuParking">
+                                    <label class="form-check-label" for="menuParking">Parking</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="menuClim">
+                                    <label class="form-check-label" for="menuClim">Climatisation</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="menuPiscine">
+                                    <label class="form-check-label" for="menuPiscine">Piscine</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Dates (optionnel)</h6>
+                                <div class="mb-2">
+                                    <input type="date" class="form-control form-control-sm" id="menuDateDebut">
+                                </div>
+                                <div>
+                                    <input type="date" class="form-control form-control-sm" id="menuDateFin">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <button class="btn btn-secondary btn-sm me-2" id="reinitialiserFiltresMenu">Réinitialiser</button>
+                            <button class="btn btn-primary btn-sm" id="appliquerFiltresMenu">Appliquer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#mes-reservations">
+                <i class="fas fa-calendar-check"></i> Mes Réservations
+            </button>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row g-0 main-content">
+            <!-- Barre de filtres et recherche (gauche) -->
+            <div class="col-lg-3 sidebar bg-light border-end">
+                <div class="p-4">
+                    <h5 class="mb-4"><i class="fas fa-sliders-h"></i> Filtres</h5>
+
+                    <!-- Recherche par localité -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Localité</label>
+                        <input type="text" class="form-control" id="filterLocalite" placeholder="Ex: Paris, Lyon...">
+                    </div>
+
+                    <!-- Prix -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Prix (€/mois)</label>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="number" class="form-control form-control-sm" id="filterPrixMin" placeholder="Min" min="0">
+                            <input type="number" class="form-control form-control-sm" id="filterPrixMax" placeholder="Max" min="0">
+                        </div>
+                        <input type="range" class="form-range" id="filterPrixRange" min="0" max="5000" step="100">
+                        <small class="text-muted" id="prixDisplay">Prix: 0€ - 5000€</small>
+                    </div>
+
+                    <!-- Chambres -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nombre de Chambres</label>
+                        <div class="d-flex gap-2">
+                            <label class="form-check"><input type="checkbox" class="form-check-input" value="1"> Studio</label>
+                            <label class="form-check"><input type="checkbox" class="form-check-input" value="1"> 1 chambre</label>
+                            <label class="form-check"><input type="checkbox" class="form-check-input" value="2"> 2 chambres</label>
+                            <label class="form-check"><input type="checkbox" class="form-check-input" value="3"> 3+ chambres</label>
+                        </div>
+                    </div>
+
+                    <!-- Équipements -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Équipements</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="wifi" value="wifi">
+                            <label class="form-check-label" for="wifi">Wi-Fi</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="parking" value="parking">
+                            <label class="form-check-label" for="parking">Parking</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="clim" value="climatisation">
+                            <label class="form-check-label" for="clim">Climatisation</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="piscine" value="piscine">
+                            <label class="form-check-label" for="piscine">Piscine</label>
+                        </div>
+                    </div>
+
+                    <!-- Notation -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Note Minimale</label>
+                        <select class="form-select" id="filterNote">
+                            <option value="0">Toutes les notes</option>
+                            <option value="3">★★★ (3+)</option>
+                            <option value="4">★★★★ (4+)</option>
+                            <option value="4.5">★★★★★ (4.5+)</option>
+                        </select>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="appliquerFiltres">Appliquer Filtres</button>
+                        <button class="btn btn-secondary" id="reinitialiserFiltres">Réinitialiser</button>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Liste des résultats -->
+                    <div>
+                        <h6 class="mb-3">Appartements trouvés: <span id="nbResultats">0</span></h6>
+                        <div id="listeApartements" class="apartment-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone centrale avec carte et détails -->
+            <div class="col-lg-6">
+                <!-- Carte -->
+                <div id="map" class="map-container"></div>
+            </div>
+
+            <!-- Panneau de détails (droite) -->
+            <div class="col-lg-3 sidebar bg-light border-start">
+                <div id="detailsPanel" class="p-4">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                        <p>Cliquez sur un appartement pour voir les détails</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Réservation -->
+    <div class="modal fade" id="reservationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Réserver <span id="modalApartName"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formReservation">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="nomClient" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="emailClient" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Téléphone</label>
+                                <input type="tel" class="form-control" id="telClient" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre de personnes</label>
+                                <input type="number" class="form-control" id="nbPersonnes" min="1" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Date d'arrivée</label>
+                                <input type="date" class="form-control" id="dateArrivee" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date de départ</label>
+                                <input type="date" class="form-control" id="dateDepart" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Observations spéciales</label>
+                            <textarea class="form-control" id="observations" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerReservation">Confirmer Réservation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Évaluation -->
+    <div class="modal fade" id="evaluationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Évaluer <span id="modalEvalName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEvaluation">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Votre note</label>
+                            <div id="noteStars" class="mb-2">
+                                <i class="fas fa-star star-icon" data-note="1"></i>
+                                <i class="fas fa-star star-icon" data-note="2"></i>
+                                <i class="fas fa-star star-icon" data-note="3"></i>
+                                <i class="fas fa-star star-icon" data-note="4"></i>
+                                <i class="fas fa-star star-icon" data-note="5"></i>
+                            </div>
+                            <input type="hidden" id="noteValue" value="0">
+                            <small id="noteText" class="text-muted">Cliquez sur les étoiles</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Votre commentaire</label>
+                            <textarea class="form-control" id="commentaireLoc" rows="4" placeholder="Partagez votre expérience..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmerEvaluation">Envoyer Évaluation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Mes Réservations -->
+    <div class="modal fade" id="mes-reservations" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Mes Réservations</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="mesReservations"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de confirmation -->
+    <div class="position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <script>
+        // Base de données des appartements
+        const appartements = [
+            {
+                id: 1,
+                nom: "Studio Lumineux Centre-Ville",
+                localite: "Paris",
+                prix: 800,
+                chambres: 0,
+                surface: 35,
+                lat: 48.8566,
+                lng: 2.3522,
+                adresse: "123 Rue de Rivoli, Paris",
+                equipements: ["wifi", "climatisation"],
+                note: 4.5,
+                nbAvis: 12,
+                description: "Studio parfait pour une personne, très lumineux avec vue sur la rue.",
+                images: ["apt1_1.jpg", "apt1_2.jpg", "apt1_3.jpg"],
+                avis: [
+                    { auteur: "Jean", note: 5, comment: "Très bien situé et bien équipé!" },
+                    { auteur: "Marie", note: 4, comment: "Bon rapport qualité-prix" }
+                ]
+            },
+            {
+                id: 2,
+                nom: "Appartement 2P Moderne",
+                localite: "Lyon",
+                prix: 650,
+                chambres: 1,
+                surface: 45,
+                lat: 45.7640,
+                lng: 4.8357,
+                adresse: "456 Avenue Berthelot, Lyon",
+                equipements: ["parking", "wifi"],
+                note: 4.2,
+                nbAvis: 8,
+                description: "Appartement moderne avec balcon, proche des transports.",
+                images: ["apt2_1.jpg", "apt2_2.jpg"],
+                avis: [
+                    { auteur: "Pierre", note: 4, comment: "Très accessible" }
+                ]
+            },
+            {
+                id: 3,
+                nom: "Grand T3 avec Terrasse",
+                localite: "Marseille",
+                prix: 1200,
+                chambres: 2,
+                surface: 75,
+                lat: 43.2965,
+                lng: 5.3698,
+                adresse: "789 Boulevard Longchamp, Marseille",
+                equipements: ["parking", "piscine", "climatisation"],
+                note: 4.8,
+                nbAvis: 15,
+                description: "Spacieux T3 avec grande terrasse, garage, piscine dans la résidence.",
+                images: ["apt3_1.jpg", "apt3_2.jpg", "apt3_3.jpg"],
+                avis: [
+                    { auteur: "Sophie", note: 5, comment: "Magnifique avec vue sur la mer!" }
+                ]
+            },
+            {
+                id: 4,
+                nom: "Cozy Room Saint-Germain",
+                localite: "Paris",
+                prix: 950,
+                chambres: 1,
+                surface: 40,
+                lat: 48.8530,
+                lng: 2.3396,
+                adresse: "321 Boulevard Saint-Germain, Paris",
+                equipements: ["wifi"],
+                note: 4.0,
+                nbAvis: 5,
+                description: "Petite chambre douillette dans le 6ème arrondissement.",
+                images: ["apt4_1.jpg"],
+                avis: []
+            },
+            {
+                id: 5,
+                nom: "Loft Industriel Villeurbanne",
+                localite: "Lyon",
+                prix: 1100,
+                chambres: 2,
+                surface: 85,
+                lat: 45.7673,
+                lng: 4.8823,
+                adresse: "654 Rue Masséna, Villeurbanne",
+                equipements: ["parking", "wifi", "climatisation"],
+                note: 4.6,
+                nbAvis: 10,
+                description: "Beau loft avec style industriel, plafonds hauts, très lumineux.",
+                images: ["apt5_1.jpg", "apt5_2.jpg"],
+                avis: []
+            },
+            {
+                id: 6,
+                nom: "Penthouse Vieux Port",
+                localite: "Marseille",
+                prix: 2000,
+                chambres: 3,
+                surface: 120,
+                lat: 43.2977,
+                lng: 5.3631,
+                adresse: "111 Quai du Vieux Port, Marseille",
+                equipements: ["parking", "piscine", "wifi", "climatisation"],
+                note: 4.9,
+                nbAvis: 20,
+                description: "Luxueux penthouse avec vue panoramique sur le Vieux Port.",
+                images: ["apt6_1.jpg", "apt6_2.jpg", "apt6_3.jpg"],
+                avis: []
+            },
+            {
+                id: 7,
+                nom: "Appartement Accueil Toulouse",
+                localite: "Toulouse",
+                prix: 700,
+                chambres: 1,
+                surface: 50,
+                lat: 43.6047,
+                lng: 1.4442,
+                adresse: "200 Rue Saint-Jean, Toulouse",
+                equipements: ["wifi", "parking"],
+                note: 3.8,
+                nbAvis: 6,
+                description: "Accueil chaleureux, bien meublé, proche des commerces.",
+                images: ["apt7_1.jpg"],
+                avis: []
+            },
+            {
+                id: 8,
+                nom: "Studio Sympa Bordeaux",
+                localite: "Bordeaux",
+                prix: 600,
+                chambres: 0,
+                surface: 32,
+                lat: 44.8378,
+                lng: -0.5795,
+                adresse: "899 Rue Porte Dijeaux, Bordeaux",
+                equipements: ["climatisation"],
+                note: 4.1,
+                nbAvis: 9,
+                description: "Petit studio douillet, idéal pour célibataire ou couple.",
+                images: ["apt8_1.jpg", "apt8_2.jpg"],
+                avis: []
+            }
+        ];
+
+        // État global de l'application
+        let state = {
+            appartementsCourants: [...appartements],
+            apartmentSelected: null,
+            reservations: JSON.parse(localStorage.getItem('reservations')) || [],
+            evaluations: JSON.parse(localStorage.getItem('evaluations')) || [],
+            map: null,
+            markers: new Map()
+        };
+
+        // Variables globales
+        let reservationModal, evaluationModal, mesResModal;
+        let toastElement;
+
+        // ===== INITIALISATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            reservationModal = new bootstrap.Modal(document.getElementById('reservationModal'));
+            evaluationModal = new bootstrap.Modal(document.getElementById('evaluationModal'));
+            mesResModal = new bootstrap.Modal(document.getElementById('mes-reservations'));
+            toastElement = document.getElementById('toast');
+
+            initializeMap();
+            afficherApartements();
+            attachEventListeners();
+        });
+
+        // ===== INITIALISATION DE LA CARTE =====
+        function initializeMap() {
+            // Créer la carte centrée sur Paris
+            state.map = L.map('map').setView([46.2276, 2.2137], 6);
+
+            // Ajouter le fond de carte (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(state.map);
+
+            // Ajouter les marqueurs pour tous les appartements
+            appartements.forEach(apt => {
+                ajouterMarqueur(apt);
+            });
+        }
+
+        // Ajouter un marqueur pour un appartement
+        function ajouterMarqueur(apt) {
+            const marker = L.marker([apt.lat, apt.lng]).addTo(state.map);
+            
+            const popup = L.popup()
+                .setContent(`
+                    <div style="min-width: 200px;">
+                        <h6 style="margin: 0 0 5px 0;">${apt.nom}</h6>
+                        <p style="margin: 0 0 5px 0; font-weight: bold; color: #0d6efd;">${apt.prix}€/mois</p>
+                        <p style="margin: 0; font-size: 12px; color: #666;">${apt.adresse}</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="afficherDetailsApartment(${apt.id})">Voir détails</button>
+                    </div>
+                `);
+            
+            marker.bindPopup(popup);
+            marker.on('click', function() {
+                afficherDetailsApartment(apt.id);
+            });
+            
+            state.markers.set(apt.id, marker);
+        }
+
+        // ===== AFFICHAGE DES APPARTEMENTS =====
+        function afficherApartements() {
+            const liste = document.getElementById('listeApartements');
+            liste.innerHTML = '';
+
+            if (state.appartementsCourants.length === 0) {
+                liste.innerHTML = '<p class="text-muted text-center">Aucun appartement ne correspond à vos critères.</p>';
+                document.getElementById('nbResultats').textContent = '0';
+                return;
+            }
+
+            document.getElementById('nbResultats').textContent = state.appartementsCourants.length;
+
+            state.appartementsCourants.forEach(apt => {
+                const card = document.createElement('div');
+                card.className = 'apartment-card';
+                if (state.apartmentSelected?.id === apt.id) {
+                    card.classList.add('active');
+                }
+                
+                card.innerHTML = `
+                    <h6>${apt.nom}</h6>
+                    <div class="location">
+                        <i class="fas fa-map-marker-alt"></i> ${apt.localite}
+                    </div>
+                    <div class="price">${apt.prix}€/mois</div>
+                    <div class="rooms">
+                        <i class="fas fa-door-open"></i> 
+                        ${apt.chambres === 0 ? 'Studio' : apt.chambres + ' chambre(s)'} | 
+                        <i class="fas fa-ruler"></i> ${apt.surface}m²
+                    </div>
+                    <div class="rating">
+                        <i class="fas fa-star"></i> ${apt.note.toFixed(1)} (${apt.nbAvis} avis)
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => afficherDetailsApartment(apt.id));
+                liste.appendChild(card);
+            });
+
+            mettreAJourCarte();
+        }
+
+        // ===== AFFICHAGE DES DÉTAILS =====
+        function afficherDetailsApartment(id) {
+            const apt = appartements.find(a => a.id === id);
+            if (!apt) return;
+
+            state.apartmentSelected = apt;
+
+            // Mettre à jour la liste (style actif)
+            document.querySelectorAll('.apartment-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            const cards = document.querySelectorAll('.apartment-card');
+            const index = state.appartementsCourants.findIndex(a => a.id === id);
+            if (index >= 0) {
+                cards[index]?.classList.add('active');
+            }
+
+            // Centrer la carte
+            state.map.setView([apt.lat, apt.lng], 14);
+            const marker = state.markers.get(apt.id);
+            if (marker) marker.openPopup();
+
+            // Afficher les détails
+            const panel = document.getElementById('detailsPanel');
+            
+            let equipementsHTML = '';
+            if (apt.equipements.length > 0) {
+                apt.equipements.forEach(eq => {
+                    let icon = '';
+                    let label = '';
+                    switch(eq) {
+                        case 'wifi': icon = 'fas fa-wifi'; label = 'Wi-Fi'; break;
+                        case 'parking': icon = 'fas fa-car'; label = 'Parking'; break;
+                        case 'climatisation': icon = 'fas fa-snowflake'; label = 'Climatisation'; break;
+                        case 'piscine': icon = 'fas fa-water'; label = 'Piscine'; break;
+                    }
+                    equipementsHTML += `<span class="badge-equipment"><i class="${icon}"></i> ${label}</span>`;
+                });
+            }
+
+            let avisHTML = '';
+            if (apt.avis.length > 0) {
+                avisHTML = apt.avis.map(av => `
+                    <div class="mb-2" style="padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                        <strong>${av.auteur}</strong> 
+                        <span style="color: #ffc107;">
+                            ${'★'.repeat(av.note)}${'☆'.repeat(5-av.note)}
+                        </span>
+                        <p style="margin: 5px 0 0 0; font-size: 12px;">${av.comment}</p>
+                    </div>
+                `).join('');
+            } else {
+                avisHTML = '<p class="text-muted small">Pas d\'avis pour le moment</p>';
+            }
+
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <h4>${apt.nom}</h4>
+                    <div class="detail-location">
+                        <i class="fas fa-map-marker-alt"></i> ${apt.adresse}
+                    </div>
+                    
+                    <div class="detail-price">${apt.prix}€/mois</div>
+                    
+                    <div class="detail-rating">
+                        <span class="stars">${'★'.repeat(Math.floor(apt.note))}${'☆'.repeat(5-Math.floor(apt.note))}</span>
+                        <span class="nb-reviews">${apt.note.toFixed(1)} (${apt.nbAvis} avis)</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h5><i class="fas fa-info-circle"></i> Description</h5>
+                    <p>${apt.description}</p>
+                </div>
+
+                <div class="detail-section">
+                    <h5><i class="fas fa-home"></i> Particulars</h5>
+                    <ul>
+                        <li><i class="fas fa-door-open"></i> ${apt.chambres === 0 ? 'Studio' : apt.chambres + ' chambre(s)'}</li>
+                        <li><i class="fas fa-ruler"></i> ${apt.surface}m²</li>
+                    </ul>
+                </div>
+
+                <div class="detail-section">
+                    <h5><i class="fas fa-tools"></i> Équipements</h5>
+                    ${equipementsHTML ? equipementsHTML : '<p class="text-muted small">Aucun équipement spécifié</p>'}
+                </div>
+
+                <div class="detail-section">
+                    <h5><i class="fas fa-comments"></i> Avis</h5>
+                    ${avisHTML}
+                </div>
+
+                <div class="btn-group-details">
+                    <button class="btn btn-primary" onclick="ouvrirReservation(${apt.id})">
+                        <i class="fas fa-calendar-check"></i> Réserver
+                    </button>
+                    <button class="btn btn-warning" onclick="ouvrirEvaluation(${apt.id})">
+                        <i class="fas fa-star"></i> Évaluer
+                    </button>
+                </div>
+            `;
+        }
+
+        // ===== FILTRAGE =====
+        function appliquerFiltres() {
+            const localite = document.getElementById('filterLocalite').value.toLowerCase();
+            const prixMin = parseInt(document.getElementById('filterPrixMin').value) || 0;
+            const prixMax = parseInt(document.getElementById('filterPrixMax').value) || 999999;
+            const filterNote = parseFloat(document.getElementById('filterNote').value) || 0;
+            
+            const chambres = Array.from(document.querySelectorAll('.form-check input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            const equipements = [];
+            if (document.getElementById('wifi').checked) equipements.push('wifi');
+            if (document.getElementById('parking').checked) equipements.push('parking');
+            if (document.getElementById('clim').checked) equipements.push('climatisation');
+            if (document.getElementById('piscine').checked) equipements.push('piscine');
+
+            // Filtrer les appartements
+            state.appartementsCourants = appartements.filter(apt => {
+                const matchLocalite = localite === '' || apt.localite.toLowerCase().includes(localite);
+                const matchPrix = apt.prix >= prixMin && apt.prix <= prixMax;
+                const matchNote = apt.note >= filterNote;
+                const matchChambres = chambres.length === 0 || chambres.includes(apt.chambres);
+                const matchEquipements = equipements.length === 0 || 
+                    equipements.every(eq => apt.equipements.includes(eq));
+
+                return matchLocalite && matchPrix && matchNote && matchChambres && matchEquipements;
+            });
+
+            afficherApartements();
+            montrerToast('Filtres appliqués', 'success');
+        }
+
+        function reinitialiserFiltres() {
+            document.getElementById('filterLocalite').value = '';
+            document.getElementById('filterPrixMin').value = '';
+            document.getElementById('filterPrixMax').value = '';
+            document.getElementById('filterPrixRange').value = 2500;
+            document.getElementById('prixDisplay').textContent = 'Prix: 0€ - 5000€';
+            document.getElementById('filterNote').value = '0';
+            
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            
+            state.appartementsCourants = [...appartements];
+            state.apartmentSelected = null;
+            
+            afficherApartements();
+            document.getElementById('detailsPanel').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                    <p>Cliquez sur un appartement pour voir les détails</p>
+                </div>
+            `;
+            
+            montrerToast('Filtres réinitialisés', 'info');
+        }
+
+        // Mettre à jour l'affichage du prix
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterPrixRange = document.getElementById('filterPrixRange');
+            if (filterPrixRange) {
+                filterPrixRange.addEventListener('change', function() {
+                    document.getElementById('prixDisplay').textContent = 
+                        `Prix: 0€ - ${this.value}€`;
+                });
+            }
+        });
+
+        // ===== RÉSERVATION =====
+        function ouvrirReservation(id) {
+            state.apartmentSelected = appartements.find(a => a.id === id);
+            document.getElementById('modalApartName').textContent = state.apartmentSelected.nom;
+            
+            // Pré-remplir avec les données de réservation précédentes
+            const lastReservation = state.reservations[state.reservations.length - 1];
+            if (lastReservation) {
+                document.getElementById('nomClient').value = lastReservation.nom;
+                document.getElementById('emailClient').value = lastReservation.email;
+                document.getElementById('telClient').value = lastReservation.tel;
+            }
+            
+            // Définir la date minimale = aujourd'hui
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateArrivee').setAttribute('min', today);
+            document.getElementById('dateDepart').setAttribute('min', today);
+            
+            reservationModal.show();
+        }
+
+        function confirmerReservation() {
+            const nom = document.getElementById('nomClient').value;
+            const email = document.getElementById('emailClient').value;
+            const tel = document.getElementById('telClient').value;
+            const nbPersonnes = parseInt(document.getElementById('nbPersonnes').value);
+            const dateArrivee = document.getElementById('dateArrivee').value;
+            const dateDepart = document.getElementById('dateDepart').value;
+            const observations = document.getElementById('observations').value;
+
+            if (!nom || !email || !tel || !dateArrivee || !dateDepart) {
+                montrerToast('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+
+            if (new Date(dateDepart) <= new Date(dateArrivee)) {
+                montrerToast('La date de départ doit être après la date d\'arrivée', 'error');
+                return;
+            }
+
+            const reservation = {
+                id: Date.now(),
+                apartmentId: state.apartmentSelected.id,
+                apartmentName: state.apartmentSelected.nom,
+                nom: nom,
+                email: email,
+                tel: tel,
+                nbPersonnes: nbPersonnes,
+                dateArrivee: dateArrivee,
+                dateDepart: dateDepart,
+                observations: observations,
+                dateReservation: new Date().toLocaleDateString('fr-FR'),
+                statut: 'En attente'
+            };
+
+            state.reservations.push(reservation);
+            localStorage.setItem('reservations', JSON.stringify(state.reservations));
+
+            montrerToast(`Réservation confirmée pour ${state.apartmentSelected.nom}!`, 'success');
+            
+            // Réinitialiser le formulaire
+            document.getElementById('formReservation').reset();
+            reservationModal.hide();
+        }
+
+        // ===== ÉVALUATION =====
+        function ouvrirEvaluation(id) {
+            state.apartmentSelected = appartements.find(a => a.id === id);
+            document.getElementById('modalEvalName').textContent = state.apartmentSelected.nom;
+            
+            // Réinitialiser les stars
+            document.querySelectorAll('.star-icon').forEach(star => {
+                star.classList.remove('active');
+            });
+            document.getElementById('noteValue').value = '0';
+            document.getElementById('noteText').textContent = 'Cliquez sur les étoiles';
+            document.getElementById('commentaireLoc').value = '';
+            
+            evaluationModal.show();
+        }
+
+        function confirmerEvaluation() {
+            const note = parseInt(document.getElementById('noteValue').value);
+            const commentaire = document.getElementById('commentaireLoc').value;
+
+            if (note === 0) {
+                montrerToast('Veuillez sélectionner une note', 'error');
+                return;
+            }
+
+            const evaluation = {
+                id: Date.now(),
+                apartmentId: state.apartmentSelected.id,
+                apartmentName: state.apartmentSelected.nom,
+                note: note,
+                commentaire: commentaire,
+                date: new Date().toLocaleDateString('fr-FR')
+            };
+
+            state.evaluations.push(evaluation);
+            localStorage.setItem('evaluations', JSON.stringify(state.evaluations));
+
+            // Ajouter l'avis à l'appartement
+            const apt = appartements.find(a => a.id === state.apartmentSelected.id);
+            if (apt) {
+                apt.avis.push({
+                    auteur: 'Utilisateur',
+                    note: note,
+                    comment: commentaire || 'Pas de commentaire'
+                });
+                apt.note = (apt.note * apt.nbAvis + note) / (apt.nbAvis + 1);
+                apt.nbAvis += 1;
+
+                // Mettre à jour le marqueur
+                const marker = state.markers.get(apt.id);
+                if (marker) {
+                    marker.setPopupContent(`
+                        <div style="min-width: 200px;">
+                            <h6 style="margin: 0 0 5px 0;">${apt.nom}</h6>
+                            <p style="margin: 0 0 5px 0; font-weight: bold; color: #0d6efd;">${apt.prix}€/mois</p>
+                            <p style="margin: 0; font-size: 12px; color: #ffc107;">★ ${apt.note.toFixed(1)} (${apt.nbAvis} avis)</p>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="afficherDetailsApartment(${apt.id})">Voir détails</button>
+                        </div>
+                    `);
+                }
+            }
+
+            montrerToast(`Merci pour votre évaluation de ${note} étoiles!`, 'success');
+            evaluationModal.hide();
+        }
+
+        // ===== MES RÉSERVATIONS =====
+        function afficherMesReservations() {
+            const container = document.getElementById('mesReservations');
+            
+            if (state.reservations.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center py-4">Aucune réservation pour le moment.</p>';
+                return;
+            }
+
+            container.innerHTML = state.reservations.map((res, idx) => `
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">${res.apartmentName}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <small><strong>Client:</strong> ${res.nom}</small><br>
+                                <small><strong>Email:</strong> ${res.email}</small><br>
+                                <small><strong>Téléphone:</strong> ${res.tel}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small><strong>Arrivée:</strong> ${res.dateArrivee}</small><br>
+                                <small><strong>Départ:</strong> ${res.dateDepart}</small><br>
+                                <small><strong>Personnes:</strong> ${res.nbPersonnes}</small>
+                            </div>
+                        </div>
+                        ${res.observations ? `<p class="mb-2"><small><strong>Observations:</strong> ${res.observations}</small></p>` : ''}
+                        <div class="d-flex justify-content-between">
+                            <span class="badge bg-warning text-dark">${res.statut}</span>
+                            <button class="btn btn-sm btn-danger" onclick="supprimerReservation(${idx})">
+                                <i class="fas fa-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function supprimerReservation(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette réservation?')) {
+                state.reservations.splice(index, 1);
+                localStorage.setItem('reservations', JSON.stringify(state.reservations));
+                afficherMesReservations();
+                montrerToast('Réservation supprimée', 'success');
+            }
+        }
+
+        // ===== UTILITAIRES =====
+        function mettreAJourCarte() {
+            // Masquer tous les marqueurs
+            state.markers.forEach(marker => {
+                state.map.removeLayer(marker);
+            });
+
+            // Ajouter seulement les marqueurs des appartements courants
+            state.appartementsCourants.forEach(apt => {
+                const marker = L.marker([apt.lat, apt.lng]).addTo(state.map);
+                const popup = L.popup()
+                    .setContent(`
+                        <div style="min-width: 200px;">
+                            <h6 style="margin: 0 0 5px 0;">${apt.nom}</h6>
+                            <p style="margin: 0 0 5px 0; font-weight: bold; color: #0d6efd;">${apt.prix}€/mois</p>
+                            <p style="margin: 0; font-size: 12px; color: #666;">${apt.adresse}</p>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="afficherDetailsApartment(${apt.id})">Voir détails</button>
+                        </div>
+                    `);
+                marker.bindPopup(popup);
+                marker.on('click', function() {
+                    afficherDetailsApartment(apt.id);
+                });
+                state.markers.set(apt.id, marker);
+            });
+
+            // Ajuster la vue pour voir tous les marqueurs
+            if (state.appartementsCourants.length > 0) {
+                const group = new L.featureGroup(Array.from(state.markers.values()));
+                state.map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function montrerToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `toast ${type}`;
+            toastMessage.textContent = message;
+            
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+        }
+
+        // ===== EVENT LISTENERS =====
+        function attachEventListeners() {
+            document.getElementById('appliquerFiltres').addEventListener('click', appliquerFiltres);
+            document.getElementById('reinitialiserFiltres').addEventListener('click', reinitialiserFiltres);
+            document.getElementById('confirmerReservation').addEventListener('click', confirmerReservation);
+            document.getElementById('confirmerEvaluation').addEventListener('click', confirmerEvaluation);
+
+            // Stars pour l'évaluation
+            document.querySelectorAll('.star-icon').forEach(star => {
+                star.addEventListener('click', function() {
+                    const note = parseInt(this.getAttribute('data-note'));
+                    document.getElementById('noteValue').value = note;
+                    
+                    document.querySelectorAll('.star-icon').forEach(s => {
+                        s.classList.remove('active');
+                    });
+                    
+                    for (let i = 0; i < note; i++) {
+                        document.querySelectorAll('.star-icon')[i].classList.add('active');
+                    }
+                    
+                    const labels = ['', 'Décevant', 'À améliorer', 'Acceptable', 'Bon', 'Excellent'];
+                    document.getElementById('noteText').textContent = `Vous avez noté: ${labels[note]}`;
+                });
+            });
+
+            // Bouton Mes Réservations
+            document.querySelector('[data-bs-target="#mes-reservations"]').addEventListener('click', afficherMesReservations);
+
+            // Filtrer au changement du champ de prix
+            document.getElementById('filterPrixRange').addEventListener('change', function() {
+                document.getElementById('filterPrixMax').value = this.value;
+            });
+
+            // Megamenu: appliquer / réinitialiser depuis le menu de filtres rapides
+            const appliquerMenuBtn = document.getElementById('appliquerFiltresMenu');
+            const reinitMenuBtn = document.getElementById('reinitialiserFiltresMenu');
+            if (appliquerMenuBtn) {
+                appliquerMenuBtn.addEventListener('click', function() {
+                    // Copier les valeurs du menu vers les champs principaux
+                    document.getElementById('filterPrixMin').value = document.getElementById('menuPrixMin').value || '';
+                    document.getElementById('filterPrixMax').value = document.getElementById('menuPrixMax').value || '';
+                    document.getElementById('wifi').checked = document.getElementById('menuWifi').checked;
+                    document.getElementById('parking').checked = document.getElementById('menuParking').checked;
+                    document.getElementById('clim').checked = document.getElementById('menuClim').checked;
+                    document.getElementById('piscine').checked = document.getElementById('menuPiscine').checked;
+
+                    // Fermer le dropdown (Bootstrap)
+                    try {
+                        const btn = document.getElementById('filtresMenuBtn');
+                        const dd = bootstrap.Dropdown.getInstance(btn) || new bootstrap.Dropdown(btn);
+                        dd.hide();
+                    } catch (e){}
+
+                    appliquerFiltres();
+                });
+            }
+            if (reinitMenuBtn) {
+                reinitMenuBtn.addEventListener('click', function() {
+                    document.getElementById('menuPrixMin').value = '';
+                    document.getElementById('menuPrixMax').value = '';
+                    document.getElementById('menuWifi').checked = false;
+                    document.getElementById('menuParking').checked = false;
+                    document.getElementById('menuClim').checked = false;
+                    document.getElementById('menuPiscine').checked = false;
+                });
+            }
+        }
+
+        // Afficher les détails au chargement si un ID est présent dans l'URL
+        window.addEventListener('load', function() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                afficherDetailsApartment(parseInt(id));
+            }
+        });
+    </script>
+</body>
+</html>
